@@ -1,0 +1,27 @@
+[package]
+name = "voice-sync-pc"
+version = "1.0.0"
+edition = "2021"
+description = "VoiceSync PC Client - Receive voice input from Android and type into active window"
+authors = ["VoiceSync Team"]
+license = "MIT"
+repository = ""
+
+[dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "time", "sync"] }
+tokio-tungstenite = "0.21"
+futures-util = "0.3"
+arboard = "3"
+enigo = "0.2"
+log = "0.4"
+env_logger = "0.11"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+clap = { version = "4", features = ["derive"] }
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

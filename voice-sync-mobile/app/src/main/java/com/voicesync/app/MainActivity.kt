@@ -19,6 +19,7 @@ import org.java_websocket.handshake.ServerHandshake
 import java.net.URI
 import android.os.Handler
 import android.os.Looper
+import android.widget.SeekBar
 import java.net.URISyntaxException
 
 class MainActivity : AppCompatActivity() {
@@ -27,15 +28,17 @@ class MainActivity : AppCompatActivity() {
     private lateinit var textInput: EditText
     private lateinit var connectBtn: Button
     private lateinit var statusText: TextView
+    private lateinit var delaySeekBar: SeekBar
+    private lateinit var delayValueText: TextView
     
     private var webSocketClient: MyWebSocketClient? = null
     private var isConnected = false
     private var lastSentText = ""
+    private var debounceDelay = 600L
 
     // Debounce 机制
     private val handler = Handler(Looper.getMainLooper())
     private var sendRunnable: Runnable? = null
-    private val DEBOUNCE_DELAY = 300L  // 300ms 延迟
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -53,11 +56,27 @@ class MainActivity : AppCompatActivity() {
         textInput = findViewById(R.id.text_input)
         connectBtn = findViewById(R.id.connect_btn)
         statusText = findViewById(R.id.status_text)
+        delaySeekBar = findViewById(R.id.delay_seekbar)
+        delayValueText = findViewById(R.id.delay_value)
 
-        // 加载保存的服务器地址
-        val savedUrl = getSharedPreferences("voice_sync", Context.MODE_PRIVATE)
-            .getString("server_url", "ws://192.168.1.1:8765")
+        val prefs = getSharedPreferences("voice_sync", Context.MODE_PRIVATE)
+        val savedUrl = prefs.getString("server_url", "ws://192.168.1.1:8765")
+        val savedDelay = prefs.getInt("debounce_delay", 600)
         serverUrlInput.setText(savedUrl)
+        debounceDelay = savedDelay.toLong()
+        delaySeekBar.progress = savedDelay
+        delayValueText.text = savedDelay.toString()
+
+        delaySeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val actualDelay = maxOf(400, progress)
+                debounceDelay = actualDelay.toLong()
+                delayValueText.text = actualDelay.toString()
+                prefs.edit().putInt("debounce_delay", actualDelay).apply()
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
 
         connectBtn.setOnClickListener {
             if (isConnected) {
@@ -84,7 +103,7 @@ class MainActivity : AppCompatActivity() {
                             autoSend(text)
                         }
                     }
-                    handler.postDelayed(sendRunnable!!, DEBOUNCE_DELAY)
+                    handler.postDelayed(sendRunnable!!, debounceDelay)
                 }
             }
         })
