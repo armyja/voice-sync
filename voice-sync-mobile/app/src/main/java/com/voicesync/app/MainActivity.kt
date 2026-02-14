@@ -203,7 +203,13 @@ class MainActivity : AppCompatActivity() {
         if (!isConnected) return
         
         lastSentText = text
-        val message = "{\"type\":\"text\",\"content\":\"$text\"}"
+        val escapedText = text
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\t", "\\t")
+        val message = "{\"type\":\"text\",\"content\":\"$escapedText\"}"
         webSocketClient?.send(message)
         
         // 清空输入框
