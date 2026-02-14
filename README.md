@@ -4,7 +4,7 @@
 
 将手机输入的文字实时同步到电脑当前活动窗口。
 
-![Screenshot](https://github.com/user-attachments/assets/7a4693e6-1913-40d2-ac8d-9ec6d797d6bf)
+<img src="https://github.com/user-attachments/assets/7a4693e6-1913-40d2-ac8d-9ec6d797d6bf" width="200">
 
 ## 功能特点
 
