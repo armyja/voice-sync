@@ -47,7 +47,7 @@ voice-sync-pc --ip 192.168.1.100 --port 8765
 
 #### 预编译版本
 
-从 releases 目录获取预编译的 exe 文件。
+从 releases 目录获取预编译的 exe 文件和 apk 安装包。
 
 ### Android 端
 
