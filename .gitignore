@@ -1,0 +1,56 @@
+# VoiceSync - 语音同步项目
+
+# =====================
+# 通用
+# =====================
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# =====================
+# Android 项目
+# =====================
+
+# Gradle 构建
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Native C++ 构建
+.cxx/
+.externalNativeBuild/
+
+# 屏幕录制
+captures/
+
+# 本地配置
+local.properties
+
+# APK/AAB（已移到 releases 文件夹）
+*.apk
+*.aab
+
+# =====================
+# PC 项目
+# =====================
+
+# 依赖
+node_modules/
+
+# 锁文件（可选）
+package-lock.json
+
+# 环境变量
+.env
+.env.local
+.env.*.local
