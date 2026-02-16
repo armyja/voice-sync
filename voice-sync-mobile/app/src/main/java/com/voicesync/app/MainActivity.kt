@@ -19,6 +19,7 @@ import org.java_websocket.handshake.ServerHandshake
 import java.net.URI
 import android.os.Handler
 import android.os.Looper
+import android.view.inputmethod.InputMethodManager
 import android.widget.SeekBar
 import java.net.URISyntaxException
 
@@ -114,6 +115,7 @@ class MainActivity : AppCompatActivity() {
     
     override fun onResume() {
         super.onResume()
+        
         // 切回前台时自动重连
         if (!isConnected) {
             val serverUrl = serverUrlInput.text.toString()
@@ -121,6 +123,29 @@ class MainActivity : AppCompatActivity() {
                 connect()
             }
         }
+        
+        // 弹出输入法
+        showKeyboard()
+    }
+    
+    override fun onRestart() {
+        super.onRestart()
+        showKeyboard()
+    }
+    
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            showKeyboard()
+        }
+    }
+    
+    private fun showKeyboard() {
+        textInput.postDelayed({
+            textInput.requestFocus()
+            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.showSoftInput(textInput, InputMethodManager.SHOW_IMPLICIT)
+        }, 300)
     }
 
     private fun checkPermissions() {
