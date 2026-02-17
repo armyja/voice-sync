@@ -183,8 +183,8 @@ async fn handle_text(state: &Arc<AppState>, text: &str) {
     if let Err(e) = state.paste_text() {
         error!("[-] 粘贴失败: {}", e);
     } else {
-        let preview = if text.len() > 15 {
-            format!("{}...", &text[..15])
+        let preview = if text.chars().count() > 15 {
+            format!("{}...", text.chars().take(15).collect::<String>())
         } else {
             text.to_string()
         };
