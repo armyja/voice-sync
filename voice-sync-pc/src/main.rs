@@ -8,6 +8,7 @@ use serde::Deserialize;
 use simplelog::{CombinedLogger, WriteLogger, LevelFilter, Config};
 use std::fs::{self, OpenOptions};
 use std::sync::Arc;
+use std::net::{IpAddr, Ipv4Addr};
 use std::path::PathBuf;
 use tokio::net::{TcpListener, TcpStream};
 use tokio_tungstenite::{accept_async, tungstenite::Message};
@@ -59,6 +60,34 @@ fn get_log_path() -> PathBuf {
     path
 }
 
+fn get_local_ips() -> Vec<IpAddr> {
+    let mut ips = Vec::new();
+    
+    // 尝试获取本机实际 IP
+    if let Ok(interface) = find_local_ip() {
+        ips.push(interface);
+    }
+    
+    // 添加本地回环地址
+    ips.push(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)));
+    ips.push(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)));
+    
+    // 去重
+    ips.sort();
+    ips.dedup();
+    ips
+}
+
+fn find_local_ip() -> Result<IpAddr, std::io::Error> {
+    use std::net::UdpSocket;
+    
+    // 尝试连接外部地址来获取本地 IP
+    let socket = UdpSocket::bind("0.0.0.0:0")?;
+    socket.connect("8.8.8.8:80")?;
+    let addr = socket.local_addr()?;
+    Ok(addr.ip())
+}
+
 #[tokio::main]
 async fn main() {
     let args = Args::parse();
@@ -78,6 +107,13 @@ async fn main() {
     info!("[+] 日志文件: {:?}", log_path);
 
     print_banner();
+    
+    let local_ips = get_local_ips();
+    println!("[+] 可用地址:");
+    for ip in &local_ips {
+        println!("    {}:{}", ip, args.port);
+    }
+    println!();
 
     let state = match AppState::new() {
         Ok(s) => Arc::new(s),
