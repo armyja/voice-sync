@@ -63,9 +63,14 @@ fn get_log_path() -> PathBuf {
 fn get_local_ips() -> Vec<IpAddr> {
     let mut ips = Vec::new();
     
-    // 尝试获取本机实际 IP
-    if let Ok(interface) = find_local_ip() {
-        ips.push(interface);
+    // 获取所有网络接口的 IP
+    if let Ok(ifaces) = list_network_interfaces() {
+        for ip in ifaces {
+            // 只保留 IPv4，排除回环地址（后面单独加）
+            if !ip.is_loopback() {
+                ips.push(ip);
+            }
+        }
     }
     
     // 添加本地回环地址
@@ -78,14 +83,40 @@ fn get_local_ips() -> Vec<IpAddr> {
     ips
 }
 
-fn find_local_ip() -> Result<IpAddr, std::io::Error> {
+#[cfg(windows)]
+fn list_network_interfaces() -> Result<Vec<IpAddr>, std::io::Error> {
+    use std::process::Command;
+    
+    let mut ips = Vec::new();
+    
+    // 使用 ipconfig 获取 IP 地址
+    let output = Command::new("ipconfig").output()?;
+    let output_str = String::from_utf8_lossy(&output.stdout);
+    
+    for line in output_str.lines() {
+        let line = line.trim();
+        if line.starts_with("IPv4") && line.contains(":") {
+            if let Some(ip_str) = line.split(':').nth(1) {
+                let ip_str = ip_str.trim();
+                if let Ok(ip) = ip_str.parse::<IpAddr>() {
+                    ips.push(ip);
+                }
+            }
+        }
+    }
+    
+    Ok(ips)
+}
+
+#[cfg(not(windows))]
+fn list_network_interfaces() -> Result<Vec<IpAddr>, std::io::Error> {
     use std::net::UdpSocket;
     
-    // 尝试连接外部地址来获取本地 IP
+    // 非 Windows 系统使用原来的方法
     let socket = UdpSocket::bind("0.0.0.0:0")?;
     socket.connect("8.8.8.8:80")?;
     let addr = socket.local_addr()?;
-    Ok(addr.ip())
+    Ok(vec![addr.ip()])
 }
 
 #[tokio::main]
