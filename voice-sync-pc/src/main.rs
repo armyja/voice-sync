@@ -3,10 +3,13 @@ use clap::Parser;
 use enigo::{Enigo, Key, Direction, Keyboard, Settings};
 use futures_util::StreamExt;
 use log::{error, info};
+use parking_lot::Mutex;
 use serde::Deserialize;
+use simplelog::{CombinedLogger, WriteLogger, LevelFilter, Config};
+use std::fs::{self, OpenOptions};
 use std::sync::Arc;
+use std::path::PathBuf;
 use tokio::net::{TcpListener, TcpStream};
-use tokio::sync::Mutex;
 use tokio_tungstenite::{accept_async, tungstenite::Message};
 
 #[derive(Parser, Debug)]
@@ -39,8 +42,8 @@ impl AppState {
         })
     }
 
-    async fn paste_text(&self) -> Result<(), String> {
-        let mut enigo = self.enigo.lock().await;
+    fn paste_text(&self) -> Result<(), String> {
+        let mut enigo = self.enigo.lock();
         enigo.key(Key::Control, Direction::Press).map_err(|e| e.to_string())?;
         enigo.key(Key::Unicode('v'), Direction::Click).map_err(|e| e.to_string())?;
         enigo.key(Key::Control, Direction::Release).map_err(|e| e.to_string())?;
@@ -48,13 +51,31 @@ impl AppState {
     }
 }
 
+fn get_log_path() -> PathBuf {
+    let mut path = dirs_next::data_local_dir().unwrap_or_else(|| PathBuf::from("."));
+    path.push("voice-sync-pc");
+    fs::create_dir_all(&path).ok();
+    path.push("voice-sync.log");
+    path
+}
+
 #[tokio::main]
 async fn main() {
     let args = Args::parse();
 
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
-        .format_timestamp_millis()
-        .init();
+    let log_path = get_log_path();
+    
+    let file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&log_path)
+        .expect("无法打开日志文件");
+    
+    CombinedLogger::init(vec![
+        WriteLogger::new(LevelFilter::Info, Config::default(), file),
+    ]).expect("无法初始化日志");
+    
+    info!("[+] 日志文件: {:?}", log_path);
 
     print_banner();
 
@@ -159,7 +180,7 @@ async fn handle_text(state: &Arc<AppState>, text: &str) {
 
     tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
 
-    if let Err(e) = state.paste_text().await {
+    if let Err(e) = state.paste_text() {
         error!("[-] 粘贴失败: {}", e);
     } else {
         let preview = if text.len() > 15 {
