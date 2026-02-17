@@ -1,6 +1,6 @@
 [package]
 name = "voice-sync-pc"
-version = "1.0.1"
+version = "1.0.2"
 edition = "2021"
 description = "VoiceSync PC Client - Receive voice input from Android and type into active window"
 authors = ["VoiceSync Team"]
